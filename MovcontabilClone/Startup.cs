@@ -32,6 +32,7 @@ namespace MovcontabilClone
           
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddControllers();
+            services.AddCors();
             services.AddDbContext<MovContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddSwaggerGen(c =>
             {
@@ -55,6 +56,7 @@ namespace MovcontabilClone
 
             app.UseAuthorization();
 
+            app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
