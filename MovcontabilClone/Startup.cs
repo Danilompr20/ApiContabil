@@ -31,7 +31,8 @@ namespace MovcontabilClone
         {
           
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(options =>
+               options.JsonSerializerOptions.PropertyNamingPolicy = null); ;
             services.AddCors();
             services.AddDbContext<MovContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddSwaggerGen(c =>

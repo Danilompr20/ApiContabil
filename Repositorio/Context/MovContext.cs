@@ -1,9 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MovcontabilClone.Entity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Domain.Entity;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovcontabilClone.Context
 {

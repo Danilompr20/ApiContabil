@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Domain.Entity;
+using Microsoft.EntityFrameworkCore;
 using MovcontabilClone.Context;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace MovcontabilClone.Repository
+namespace Repositorio.Repository
 {
     public class Repository<T> : IRepository<T> where T : class
     {
@@ -24,10 +25,10 @@ namespace MovcontabilClone.Repository
         }
 
         // retorna uma entidade
-        public T GetById(Expression<Func<T, bool>> predicate)
-        {
-            return _context.Set<T>().SingleOrDefault(predicate);
-        }
+        //public T GetById(Expression<Func<T, bool>> predicate)
+        //{
+        //    return _context.Set<T>().SingleOrDefault(predicate);
+        //}
 
         public void Add(T entity)
         {
@@ -47,5 +48,7 @@ namespace MovcontabilClone.Repository
             _context.Set<T>().Remove(entity);
             _context.SaveChanges();
         }
+
+      
     }
 }

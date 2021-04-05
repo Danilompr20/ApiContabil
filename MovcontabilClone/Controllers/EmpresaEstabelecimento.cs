@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovcontabilClone.Entity;
-using MovcontabilClone.Repository;
+using Repositorio.Repository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +21,7 @@ namespace MovcontabilClone.Controllers
         [HttpGet]
         //ActionResult permite retornar todos tipos contidos em IActionResult mais o tipo Produto por exemplo
         public ActionResult <IEnumerable<EmpresaEstabelecimento>> Get()
+        
         {
             // to list cria uma lista de produtos, asNotracking, so para modo consulta
             var empresaEstabelecimentos = _repository.Get().ToList();
