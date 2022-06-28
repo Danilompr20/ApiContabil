@@ -13,7 +13,7 @@ namespace Aplication.Interface
     {
         IQueryable GetEventoByName(string name);
 
-        IQueryable<EmpresaEstabelecimentoViewModel> Get();
+        IEnumerable<EmpresaEstabelecimentoViewModel> Get();
         EmpresaEstabelecimentoViewModel GetEmpresaByName(string name);
         EmpresaEstabelecimentoViewModel GetEmpresaById(int id);
         EmpresaEstabelecimentoViewModel Add(EmpresaEstabelecimentoViewModel model);

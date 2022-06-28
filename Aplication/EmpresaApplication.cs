@@ -87,12 +87,12 @@ namespace Aplication
             }
         }
 
-        public IQueryable<EmpresaEstabelecimentoViewModel> Get()
+        public IEnumerable<EmpresaEstabelecimentoViewModel> Get()
         {
             try
             {
-                var empresa = _repository.Get();
-                if (empresa == null)
+                var empresa = _repository.Get().ToList();
+                if (empresa.Count ==0)
                 {
                     return null;
                 }
@@ -107,7 +107,7 @@ namespace Aplication
                         viewModels.Add(viewModel);
                     }
                      
-                    return (IQueryable<EmpresaEstabelecimentoViewModel>)viewModels;
+                    return viewModels;
                 }
             }
             catch (Exception ex)

@@ -7,9 +7,11 @@ using System.Linq;
 using Aplication.Interface;
 using System.Threading.Tasks;
 using Aplication.Model;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovcontabilClone.Controllers
 {
+    [Authorize]
     [Route("api/[Controller]")]
     [ApiController]
     public class EmpresaEstabelecimentoController : Controller
@@ -25,8 +27,8 @@ namespace MovcontabilClone.Controllers
         
         {
             var empresa = new EmpresaEstabelecimento();
-            
-            var empresaEstabelecimentos = _empresaApplication.Get().ToList();
+
+            var empresaEstabelecimentos = _empresaApplication.Get()?.ToList();
             if (empresaEstabelecimentos == null)
             {
                 return NotFound("Nenhuma Empresa Encontrada");
