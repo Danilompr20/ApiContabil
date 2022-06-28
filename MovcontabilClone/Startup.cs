@@ -1,3 +1,5 @@
+using Aplication;
+using Aplication.Interface;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -9,11 +11,16 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using MovcontabilClone.Context;
-using MovcontabilClone.Repository;
+using Repositorio.Repository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using Aplication.Utils;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace MovcontabilClone
 {
@@ -31,13 +38,38 @@ namespace MovcontabilClone
         {
           
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            services.AddScoped<IEmpresaRepository, EmpresaRepository>();
+            services.AddScoped<ICnaeRepository, CnaeRepository>();  
+            //services.AddScoped<ICnaeApplication, CnaeApplication>();
+            services.AddScoped<IEmpresaApplication, EmpresaApplication>();
             services.AddControllers().AddJsonOptions(options =>
-               options.JsonSerializerOptions.PropertyNamingPolicy = null); ;
+               options.JsonSerializerOptions.PropertyNamingPolicy = null).AddNewtonsoftJson(
+                x=> x.SerializerSettings.ReferenceLoopHandling =Newtonsoft.Json.ReferenceLoopHandling.Ignore) ;
+           // services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            var mappingConfig = new MapperConfiguration(mc => {
+                mc.AddProfile(new MappingProfile());
+            });
+            IMapper mapper = mappingConfig.CreateMapper();
+            services.AddSingleton(mapper);
             services.AddCors();
             services.AddDbContext<MovContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "MovcontabilClone", Version = "v1" });
+            });
+            services.AddAuthentication(
+           JwtBearerDefaults.AuthenticationScheme).
+           AddJwtBearer(options =>
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidAudience = Configuration["TokenConfiguration:Audience"],
+                ValidIssuer = Configuration["TokenConfiguration:Issuer"],
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
             });
         }
 
@@ -54,7 +86,7 @@ namespace MovcontabilClone
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());

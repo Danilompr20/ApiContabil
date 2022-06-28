@@ -20,12 +20,12 @@ namespace Repositorio.Repository
 
         public EmpresaEstabelecimento GetEmpresaById(int id)
         {
-            return _context.EmpresaEstabelecimentos.Where(x => x.Id == id).FirstOrDefault();
+            return _context.EmpresaEstabelecimentos.Include(x=> x.Cnae).Where(x => x.Id == id).AsNoTracking().FirstOrDefault();
         }
 
         public EmpresaEstabelecimento GetEmpresaByName(string name)
         {
-            return _context.EmpresaEstabelecimentos.Where(x => x.NomeFantasia == name).FirstOrDefault();
+            return _context.EmpresaEstabelecimentos.Include(x => x.Cnae).Where(x => x.NomeFantasia == name).AsNoTracking().FirstOrDefault();
         }
 
         

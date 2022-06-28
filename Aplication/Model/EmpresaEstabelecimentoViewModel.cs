@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MovcontabilClone.Entity
+namespace Aplication.Model
 {
-    public class EmpresaEstabelecimento
+    public class EmpresaEstabelecimentoViewModel
     {
         public int Id { get; set; }
-       
+
         public string Cnpj { get; set; }
 
         public string RazaoSocial { get; set; }
@@ -39,10 +37,10 @@ namespace MovcontabilClone.Entity
 
         public decimal? Fap { get; set; }
 
-        [ForeignKey("CnaePreponderanteId")]
+       
         public int CnaePreponderanteId { get; set; }
-        
-        public Cnae Cnae { get; set; }
+
+        public string CnaeDescricao { get; set; }
 
         public string CnaeEmpresa { get; set; }
 
@@ -56,9 +54,8 @@ namespace MovcontabilClone.Entity
 
         public decimal? Rat { get; set; }
 
-        [ForeignKey("UsuarioId")]
+       
         public int UsuarioId { get; set; }
-        public Usuario Usuario { get; set; }
-
+    //    public Usuario Usuario { get; set; }
     }
 }

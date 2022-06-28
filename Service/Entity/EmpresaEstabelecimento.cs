@@ -9,6 +9,10 @@ namespace Domain.Entity
 {
     public class EmpresaEstabelecimento
     {
+        public EmpresaEstabelecimento()
+        {
+            this.Cnae = new Cnae();
+        }
         public int Id { get; set; }
        
         public string Cnpj { get; set; }

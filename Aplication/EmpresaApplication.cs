@@ -1,4 +1,6 @@
 ﻿using Aplication.Interface;
+using Aplication.Model;
+using AutoMapper;
 using Domain.Entity;
 using Repositorio.Repository;
 using System;
@@ -9,22 +11,28 @@ using System.Threading.Tasks;
 
 namespace Aplication
 {
-    class EmpresaApplication : IEmpresaApplication
+    public class EmpresaApplication : IEmpresaApplication
     {
         private  readonly IRepository<EmpresaEstabelecimento> _repository;
         private readonly IEmpresaRepository _empresaRepository;
-        public EmpresaApplication(IRepository<EmpresaEstabelecimento> repository, IEmpresaRepository empresaRepository)
+        private readonly IMapper _mapper;
+        public EmpresaApplication(IRepository<EmpresaEstabelecimento> repository, IEmpresaRepository empresaRepository, IMapper mapper)
         {
             _repository = repository;
             _empresaRepository = empresaRepository;
+            _mapper = mapper;
         }
 
-        public EmpresaEstabelecimento Add(EmpresaEstabelecimento model)
+        public EmpresaEstabelecimentoViewModel Add(EmpresaEstabelecimentoViewModel model)
         {
             try
             {
-                _empresaRepository.Add(model);
-                return _empresaRepository.GetEmpresaById(model.Id);
+                var empresa = _mapper.Map<EmpresaEstabelecimento>(model);
+                _empresaRepository.Add(empresa);
+                 var retorno = _empresaRepository.GetEmpresaById(model.Id);
+                
+
+                return _mapper.Map<EmpresaEstabelecimentoViewModel>(retorno);
             }
             catch (Exception ex)
             {
@@ -33,7 +41,7 @@ namespace Aplication
             }
 
         }
-        public EmpresaEstabelecimento Update(int id, EmpresaEstabelecimento model)
+        public EmpresaEstabelecimentoViewModel Update(int id, EmpresaEstabelecimentoViewModel model)
         {
             try
             {
@@ -44,9 +52,11 @@ namespace Aplication
                 }
                 else
                 {
-                    _repository.Update(model);
+                    var empresaEntity = _mapper.Map<EmpresaEstabelecimento>(model);
+                    _repository.Update(empresaEntity);
                 }
-                return _empresaRepository.GetEmpresaById(model.Id);
+                var retorno = _empresaRepository.GetEmpresaById(model.Id);
+                return _mapper.Map<EmpresaEstabelecimentoViewModel>(retorno);
             }
             catch (Exception ex)
             {
@@ -77,7 +87,7 @@ namespace Aplication
             }
         }
 
-        public IQueryable<EmpresaEstabelecimento> Get()
+        public IQueryable<EmpresaEstabelecimentoViewModel> Get()
         {
             try
             {
@@ -88,7 +98,16 @@ namespace Aplication
                 }
                 else
                 {
-                    return empresa;
+                    var viewModels = new List<EmpresaEstabelecimentoViewModel>();
+
+                    foreach (var item in empresa)
+                    {
+                        var viewModel = _mapper.Map<EmpresaEstabelecimentoViewModel>(item);
+                        viewModel.CnaeDescricao = item.Cnae.Descricao;
+                        viewModels.Add(viewModel);
+                    }
+                     
+                    return (IQueryable<EmpresaEstabelecimentoViewModel>)viewModels;
                 }
             }
             catch (Exception ex)
@@ -98,7 +117,7 @@ namespace Aplication
             }
         }
 
-        public EmpresaEstabelecimento GetEmpresaById(int id)
+        public EmpresaEstabelecimentoViewModel GetEmpresaById(int id)
         {
             try
             {
@@ -108,7 +127,9 @@ namespace Aplication
                 {
                     return null;
                 }
-                return empresa;
+                var viewModel = _mapper.Map<EmpresaEstabelecimentoViewModel>(empresa);
+                viewModel.CnaeDescricao = empresa.Cnae.Descricao;
+                return viewModel;
             }
             catch (Exception ex)
             {
@@ -117,7 +138,7 @@ namespace Aplication
             }
         }
 
-        public EmpresaEstabelecimento GetEmpresaByName(string name)
+        public EmpresaEstabelecimentoViewModel GetEmpresaByName(string name)
         {
             try
             {
@@ -126,7 +147,9 @@ namespace Aplication
                     return null;
                 }
                 var empresa = _empresaRepository.GetEmpresaByName(name);
-                return empresa;
+                var viewModel = _mapper.Map<EmpresaEstabelecimentoViewModel>(empresa);
+                viewModel.CnaeDescricao = empresa.Cnae.Descricao;
+                return viewModel;
             }
             catch (Exception ex)
             {

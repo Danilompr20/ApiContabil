@@ -10,8 +10,8 @@ namespace Repositorio.Repository
      public interface ICnaeRepository :IRepository<Cnae>
     {
        
-        IQueryable GetCnaeByName(string name);
+        Cnae GetCnaeByName(string name);
 
-        IQueryable GetCnaeByName(int id);
+        Cnae GetCnaeById(int id);
     }
 }

@@ -16,17 +16,18 @@ namespace Repositorio.Repository
         public CnaeRepository(MovContext context) : base(context)
         {
             
+
         }
   
 
-        public IQueryable GetCnaeByName(string name)
+        public Cnae GetCnaeByName(string name)
         {
-            return _context.Cnaes.Where(x=> x.Descricao.ToLower().Contains(name.ToLower()));
+            return _context.Cnaes.Where(x=> x.Descricao.ToLower().Contains(name.ToLower())).AsNoTracking().FirstOrDefault();
         }
 
-        public IQueryable GetCnaeByName(int id)
+        public Cnae GetCnaeById(int id)
         {
-            return _context.Cnaes.Where(x => x.Id == id);
+            return _context.Cnaes.Where(x => x.Id == id).AsNoTracking().FirstOrDefault();
         }
     }
 }
