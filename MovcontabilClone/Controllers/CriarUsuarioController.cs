@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MovcontabilClone.Context;
+using ServiceStack.Redis;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -24,6 +25,7 @@ namespace MovcontabilClone.Controllers
         private readonly MovContext _context;
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
+        private string host = "localhost:6379";
         public CriarUsuarioController(MovContext context, IMapper mapper, IConfiguration configuration)
         {
             _context = context;
@@ -180,6 +182,22 @@ namespace MovcontabilClone.Controllers
         }
 
 
+        [HttpPost("Refresh")]
+        public async Task<ActionResult> Refresh([FromBody] Refresh refresh)
+        {
+            var principal =  await GetClaims(refresh.Token);
+            var email = principal.Identity.Name;
+            var refreshTokenSalvo =  GetRefreshToken(email).ToString();
+
+            if (refresh.RefreshToken != refreshTokenSalvo)
+                throw new SecurityTokenException("Refresh token invalido.");
+            var usuario = _context.Usuarios.Where(x => x.Email == email).FirstOrDefault();
+            var novotoken = await GeraToken(usuario);
+            DeleteRefreshToken(email, refresh.RefreshToken);
+            SaveRefreshToken(email, novotoken.Token);
+            return Ok(novotoken);
+        }
+
 
         [NonAction]
         private void HashSenha(Usuario usuario)
@@ -243,14 +261,80 @@ namespace MovcontabilClone.Controllers
                 expires: expiration,
                 signingCredentials: credencials
                 );
-
+            var refreshToken = GerarRefreshToken();
+            SaveRefreshToken(usuario.Email,refreshToken);
             return new UsuarioToken()
             {
                 Autenticado = true,
                 Token = new JwtSecurityTokenHandler().WriteToken(token),
+                RefreshToken= refreshToken,
                 Expirado = expiration,
                 Mensagem = "Token Ok"
             };
+        }
+
+        [NonAction]
+        private string GerarRefreshToken()
+        {
+            var guid = Guid.NewGuid().ToString();
+            return guid;
+        }
+
+        [NonAction]
+        private async  Task<ClaimsPrincipal> GetClaims(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidAudience = _configuration["TokenConfiguration:Audience"],
+                ValidIssuer = _configuration["TokenConfiguration:Issuer"],
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]))
+            };
+
+            var tokeHandler = new JwtSecurityTokenHandler();
+            var principal = tokeHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
+            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.OrdinalIgnoreCase))
+                throw new SecurityTokenException("Token Invalido");
+            return   principal;
+        }
+
+
+        [NonAction]
+        private void SaveRefreshToken(string email, string refreshToken)
+        {
+         
+            using (var redisClient = new RedisClient(host))
+            {
+                redisClient.SetValue(email, refreshToken);
+                
+            }
+        }
+
+        [NonAction]
+        private string GetRefreshToken(string email)
+        {
+            var refreshToken = "";
+            using (var redisClient = new RedisClient(host))
+            {
+               var bit = redisClient.GetValue(email);
+                refreshToken = bit;
+
+            }
+            return refreshToken;
+        }
+
+        [NonAction]
+        private void DeleteRefreshToken(string email, string refreshToken)
+        {
+            using (var redisClient = new RedisClient(host))
+            {
+                redisClient.Del(email);
+
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Domain.Entity
         public string Nome { get; set; }
         public string Email { get; set; }
         public string Senha { get; set; }
+        public List<EmpresaEstabelecimento> Empresas { get; set; }
         public List<Papel> Papel { get; set; }
         public IEnumerable<UsuarioPapel> UsuariosPapeis { get; set; }
     }

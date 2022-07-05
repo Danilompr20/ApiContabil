@@ -57,6 +57,7 @@ namespace MovcontabilClone
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "MovcontabilClone", Version = "v1" });
             });
+            // toda vez que chega request ele valida o token nesse serviço
             services.AddAuthentication(
            JwtBearerDefaults.AuthenticationScheme).
            AddJwtBearer(options =>

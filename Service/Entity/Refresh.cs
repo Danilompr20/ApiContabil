@@ -4,14 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Aplication.Model
+namespace Domain.Entity
 {
-    public class UsuarioToken
+    public class Refresh
     {
-        public bool  Autenticado { get; set; }
-        public DateTime Expirado { get; set; }
         public string Token { get; set; }
         public string RefreshToken { get; set; }
-        public string Mensagem { get; set; }
     }
 }
