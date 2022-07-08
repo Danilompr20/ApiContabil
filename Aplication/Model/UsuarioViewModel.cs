@@ -15,6 +15,7 @@ namespace Aplication.Model
         public string Email { get; set; }
         public string Senha { get; set; }
         public List<PapelViewModel> Papel { get; set; }
-        public List<UsuarioPapelViewModel> UsuariosPapeis { get; set; }
+        public List<EmpresaEstabelecimentoViewModel> Empresas { get; set; }
+       // public List<UsuarioPapelViewModel> PapelUsuario { get; set; }
     }
 }

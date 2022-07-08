@@ -9,8 +9,9 @@ namespace Aplication.Model
      public class UsuarioPapelViewModel
     {
         public UsuarioViewModel Usuario { get; set; }
-        public int IdUsuario { get; set; }
+        public int UsuarioId { get; set; }
         public PapelViewModel Papel { get; set; }
-        public int IdPapel { get; set; }
+        public int PapelId { get; set; }
+
     }
 }

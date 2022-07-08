@@ -55,7 +55,7 @@ namespace Aplication.Model
         public decimal? Rat { get; set; }
 
        
-        public int UsuarioId { get; set; }
+        public int? UsuarioId { get; set; }
     //    public Usuario Usuario { get; set; }
     }
 }

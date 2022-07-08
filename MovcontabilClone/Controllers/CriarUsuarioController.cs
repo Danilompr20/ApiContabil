@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace MovcontabilClone.Controllers
         public ActionResult<IEnumerable<UsuarioViewModel>> Get()
 
         {
-            var usuario = _context.Usuarios.ToList();
+            var usuario = _context.Usuarios.Include(x => x.Empresas).Include(x => x.PapelUsuario).ToList();
             var usuarioViewModel = usuario.Select(x => _mapper.Map<UsuarioViewModel>(x)).ToList();
             return usuarioViewModel;
         }
@@ -48,7 +49,7 @@ namespace MovcontabilClone.Controllers
             {
                 return NotFound();
             }
-            var usuario = _context.Usuarios.Where(x => x.Id == id).Include(x => x.UsuariosPapeis).ThenInclude(x => x.Papel).FirstOrDefault();
+            var usuario = _context.Usuarios.Where(x => x.Id == id).Include(x => x.PapelUsuario).ThenInclude(x => x.Papel).FirstOrDefault();
             return _mapper.Map<UsuarioViewModel>(usuario);
         }
 
@@ -56,27 +57,21 @@ namespace MovcontabilClone.Controllers
         public async Task<ActionResult> PostAsync([FromBody] UsuarioViewModel usuarioModel)
         {
             var usuario = _mapper.Map<Usuario>(usuarioModel);
+            var papel = usuarioModel.Papel;
+            emailInvalido(usuario.Email);
             if (await EmailRepetido(usuario))
                 return BadRequest("E-mail já cadastrado");
             try
             {
+                
                 HashSenha(usuario);
                 _context.Add(usuario);
-
-                if (usuario.Papel.Count > 0)
-                {
-                    foreach (var papel in usuario.Papel)
-                    {
-                        var papelUsuario = new UsuarioPapel
-                        {
-                            IdPapel = papel.Id,
-                            IdUsuario = usuario.Id
-                        };
-                        _context.UsuariosPapeis.Add(papelUsuario);
-
-                    }
-                }
                 _context.SaveChanges();
+                if (usuarioModel.Papel.Count > 0)
+                    await SalvarPapelUsuario(usuario, _mapper.Map<List<Papel>>(papel));
+
+                if (usuario.Empresas is not null)
+                    await SalvarEmpresaUsuario(usuario, usuario.Empresas);
                 var usuarioView = _mapper.Map<UsuarioViewModel>(usuario);
                 return Ok(GeraToken(usuario));
 
@@ -91,19 +86,20 @@ namespace MovcontabilClone.Controllers
         }
 
         [HttpPut("{id}")]
-        public ActionResult Put(int id, [FromBody] UsuarioViewModel usuarioModel)
+        public async Task<ActionResult> Put(int id, [FromBody] UsuarioViewModel usuarioModel)
         {
             try
             {
-                var usuario = _context.Usuarios.Where(x => x.Id == id).FirstOrDefault();
+                var usuario = _context.Usuarios.Where(x => x.Id == id).Include(x => x.PapelUsuario).Include(x => x.Empresas).AsNoTracking().FirstOrDefault();
                 if (usuario == null)
                     return NotFound();
                 else
                 {
+                    var teste = _mapper.Map<Usuario>(usuarioModel);
                     HashSenha(usuario);
-                    _context.Add(_mapper.Map<Usuario>(usuarioModel));
-                    var PapelJaCadastrado = _context.UsuariosPapeis.AsNoTracking().ToList();
-                    if (usuario.Papel != null)
+                    _context.Usuarios.Update(_mapper.Map<Usuario>(usuarioModel));
+                    var PapelJaCadastrado = _context.PapelUsuario.Where(x=> x.UsuarioId == usuario.Id).AsNoTracking().ToList();
+                    if (usuarioModel.Papel != null)
                     {
                         // maneira alternativa 
                         //foreach (var item in usuario.Papel)
@@ -119,24 +115,27 @@ namespace MovcontabilClone.Controllers
                         //    }
                         //}
 
-                        var excluirPapeis = PapelJaCadastrado.Where(x => !usuario.Papel.Select(s => s.Id).Contains(x.IdPapel)).ToList();
-                        var adcionarPapeis = usuario.Papel.Where(x => !PapelJaCadastrado.Select(p => p.IdPapel).Contains(x.Id)).ToList();
+                        var excluirPapeis = PapelJaCadastrado.Where(x => !usuarioModel.Papel.Select(s => s.Id).Contains(x.PapelId)).ToList();
+                        var adcionarPapeis = usuarioModel.Papel.Where(x => !PapelJaCadastrado.Select(p => p.PapelId).Contains(x.Id)).ToList();
 
-                        _context.UsuariosPapeis.RemoveRange(excluirPapeis);
-                        _context.UsuariosPapeis.AddRange(adcionarPapeis.Select(x => new UsuarioPapel
+                        _context.PapelUsuario.RemoveRange(excluirPapeis);
+                        
+                        _context.PapelUsuario.AddRange(adcionarPapeis.Select(x => new UsuarioPapel
                         {
-                            IdPapel = x.Id,
-                            IdUsuario = usuario.Id
+                            PapelId = x.Id,
+                            UsuarioId = usuario.Id
                         }));
+                       
                     }
-
                     _context.SaveChanges();
 
+                    if (usuarioModel.Empresas is not null)
+                        await SalvarEmpresaUsuario(usuario, usuario.Empresas);
 
                     return Ok();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
                 throw;
@@ -155,11 +154,12 @@ namespace MovcontabilClone.Controllers
                 }
                 else
                 {
-                    var PapelJaCadastrado = _context.UsuariosPapeis.AsNoTracking().ToList();
+                    var PapelJaCadastrado = _context.PapelUsuario.AsNoTracking().ToList();
                     foreach (var item in PapelJaCadastrado)
                     {
-                        if (item.IdUsuario == usuario.Id)
-                            _context.UsuariosPapeis.Remove(item);
+                        if (item.UsuarioId == usuario.Id)
+                            _context.PapelUsuario.Remove(item);
+                        //buscar empresa e desassociar o usuario dela
                     }
                     _context.Usuarios.Remove(usuario);
                     _context.SaveChanges();
@@ -185,9 +185,9 @@ namespace MovcontabilClone.Controllers
         [HttpPost("Refresh")]
         public async Task<ActionResult> Refresh([FromBody] Refresh refresh)
         {
-            var principal =  await GetClaims(refresh.Token);
+            var principal = await GetClaims(refresh.Token);
             var email = principal.Identity.Name;
-            var refreshTokenSalvo =  GetRefreshToken(email).ToString();
+            var refreshTokenSalvo = GetRefreshToken(email).ToString();
 
             if (refresh.RefreshToken != refreshTokenSalvo)
                 throw new SecurityTokenException("Refresh token invalido.");
@@ -255,19 +255,19 @@ namespace MovcontabilClone.Controllers
             var expiracao = _configuration["TokenConfiguration:ExpireHours"];
             var expiration = DateTime.UtcNow.AddHours(double.Parse(expiracao));
             JwtSecurityToken token = new JwtSecurityToken(
-                issuer:_configuration["TokenConfiguration:Issuer"],
+                issuer: _configuration["TokenConfiguration:Issuer"],
                 audience: _configuration["TokenConfiguration:Audience"],
                 claims: claims,
                 expires: expiration,
                 signingCredentials: credencials
                 );
             var refreshToken = GerarRefreshToken();
-            SaveRefreshToken(usuario.Email,refreshToken);
+            SaveRefreshToken(usuario.Email, refreshToken);
             return new UsuarioToken()
             {
                 Autenticado = true,
                 Token = new JwtSecurityTokenHandler().WriteToken(token),
-                RefreshToken= refreshToken,
+                RefreshToken = refreshToken,
                 Expirado = expiration,
                 Mensagem = "Token Ok"
             };
@@ -281,7 +281,7 @@ namespace MovcontabilClone.Controllers
         }
 
         [NonAction]
-        private async  Task<ClaimsPrincipal> GetClaims(string token)
+        private async Task<ClaimsPrincipal> GetClaims(string token)
         {
             var tokenValidationParameters = new TokenValidationParameters
             {
@@ -299,18 +299,18 @@ namespace MovcontabilClone.Controllers
             var principal = tokeHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
             if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.OrdinalIgnoreCase))
                 throw new SecurityTokenException("Token Invalido");
-            return   principal;
+            return principal;
         }
 
 
         [NonAction]
         private void SaveRefreshToken(string email, string refreshToken)
         {
-         
+
             using (var redisClient = new RedisClient(host))
             {
                 redisClient.SetValue(email, refreshToken);
-                
+
             }
         }
 
@@ -320,7 +320,7 @@ namespace MovcontabilClone.Controllers
             var refreshToken = "";
             using (var redisClient = new RedisClient(host))
             {
-               var bit = redisClient.GetValue(email);
+                var bit = redisClient.GetValue(email);
                 refreshToken = bit;
 
             }
@@ -335,6 +335,63 @@ namespace MovcontabilClone.Controllers
                 redisClient.Del(email);
 
             }
+        }
+
+        [NonAction]
+        private async Task SalvarPapelUsuario(Usuario usuario, List<Papel> papeis)
+        {
+            var usuarioSalvo = await GetUserByEmail(usuario);
+            foreach (var papel in papeis)
+            {
+                var papelUsuario = new UsuarioPapel
+                {
+                    PapelId = papel.Id,
+                    UsuarioId = usuarioSalvo.Id
+                };
+                _context.PapelUsuario.Add(papelUsuario);
+
+            }
+            _context.SaveChanges();
+        }
+
+        [NonAction]
+        private async Task SalvarEmpresaUsuario(Usuario usuario, List<EmpresaEstabelecimento> empresas)
+        {
+            var usuarioSalvo = await GetUserByEmail(usuario);
+            var empresassalvas = _context.EmpresaEstabelecimentos.Where(x => empresas.Select(e => e.Id).Contains(x.Id)).AsNoTracking().ToList();
+            // var empresasJaCadastradaParaUsuario = _context.EmpresaEstabelecimentos.Where(x => x.UsuarioId == usuario.Id).AsNoTracking().ToList();
+            var empresasASeremRemovidas = _context.EmpresaEstabelecimentos.Where(x => !empresas.Select(e => e.Id).Contains(x.Id)).AsNoTracking().ToList();
+
+            if (empresasASeremRemovidas.Count > 0)
+            {
+                empresasASeremRemovidas.ForEach(x =>
+                {
+                    x.UsuarioId = 0;
+                    _context.EmpresaEstabelecimentos.Update(x);
+                });
+            }
+
+            if (empresassalvas.Count > 0)
+            {
+                empresassalvas.ForEach(x =>
+                {
+                    x.UsuarioId = usuario.Id;
+                    _context.EmpresaEstabelecimentos.Update(x);
+                });
+            }
+            _context.SaveChanges();
+        }
+        private void emailInvalido(string emailRecebido)
+        {
+            try
+            {
+                MailAddress email = new MailAddress(emailRecebido);
+            }
+            catch (FormatException ex)
+            {
+
+                throw new FormatException("E-mail não cumpre os requisitos necessarios.");
+            } 
         }
     }
 }

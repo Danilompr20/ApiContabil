@@ -22,15 +22,15 @@ namespace MovcontabilClone.Context
         public DbSet<ReceitaDespesa> ReceitaDespesas{ get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Papel> Papeis { get; set; }
-        public DbSet<UsuarioPapel> UsuariosPapeis { get; set; }
+        public DbSet<UsuarioPapel> PapelUsuario { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<UsuarioPapel>().HasKey(x => new { x.IdUsuario, x.IdPapel });
+            modelBuilder.Entity<UsuarioPapel>().HasKey(x => new { x.UsuarioId, x.PapelId });
 
-            modelBuilder.Entity<UsuarioPapel>().HasOne(x => x.Usuario).WithMany(x => x.UsuariosPapeis).HasForeignKey(x => x.IdUsuario);
-            modelBuilder.Entity<UsuarioPapel>().HasOne(x => x.Papel).WithMany(x => x.UsuariosPapeis).HasForeignKey(x => x.IdPapel);
+            //modelBuilder.Entity<UsuarioPapel>().HasOne(x => x.Usuario).WithMany(x => x.UsuariosPapeis).HasForeignKey(x => x.IdUsuario);
+            //modelBuilder.Entity<UsuarioPapel>().HasOne(x => x.Papel).WithMany(x => x.UsuariosPapeis).HasForeignKey(x => x.IdPapel);
             modelBuilder.Entity<Usuario>().HasIndex(x => x.Email).IsUnique();
-        }    
+        }
     }
 }

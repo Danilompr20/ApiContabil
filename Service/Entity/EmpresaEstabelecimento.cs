@@ -44,7 +44,7 @@ namespace Domain.Entity
         public decimal? Fap { get; set; }
 
         [ForeignKey("CnaePreponderanteId")]
-        public int CnaePreponderanteId { get; set; }
+        public int? CnaePreponderanteId { get; set; }
         
         public Cnae Cnae { get; set; }
 
@@ -61,7 +61,7 @@ namespace Domain.Entity
         public decimal? Rat { get; set; }
 
         [ForeignKey("UsuarioId")]
-        public int UsuarioId { get; set; }
+        public int? UsuarioId { get; set; }
         public Usuario Usuario { get; set; }
 
     }

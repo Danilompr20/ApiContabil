@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MovcontabilClone.Context;
 
 namespace Repositorio.Migrations
 {
     [DbContext(typeof(MovContext))]
-    partial class MovContextModelSnapshot : ModelSnapshot
+    [Migration("20220707202455_l")]
+    partial class l
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -491,9 +493,6 @@ namespace Repositorio.Migrations
                     b.Property<string>("Nome")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("PapelId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Senha")
                         .HasColumnType("nvarchar(max)");
 
@@ -503,22 +502,20 @@ namespace Repositorio.Migrations
                         .IsUnique()
                         .HasFilter("[Email] IS NOT NULL");
 
-                    b.HasIndex("PapelId");
-
                     b.ToTable("Usuarios");
                 });
 
-            modelBuilder.Entity("Domain.Entity.UsuarioPapel", b =>
+            modelBuilder.Entity("PapelUsuario", b =>
                 {
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int");
-
                     b.Property<int>("PapelId")
                         .HasColumnType("int");
 
-                    b.HasKey("UsuarioId", "PapelId");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
-                    b.HasIndex("PapelId");
+                    b.HasKey("PapelId", "UsuarioId");
+
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("PapelUsuario");
                 });
@@ -549,44 +546,24 @@ namespace Repositorio.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("Domain.Entity.Usuario", b =>
+            modelBuilder.Entity("PapelUsuario", b =>
                 {
                     b.HasOne("Domain.Entity.Papel", null)
-                        .WithMany("Usuario")
-                        .HasForeignKey("PapelId");
-                });
-
-            modelBuilder.Entity("Domain.Entity.UsuarioPapel", b =>
-                {
-                    b.HasOne("Domain.Entity.Papel", "Papel")
-                        .WithMany("PapelUsuario")
+                        .WithMany()
                         .HasForeignKey("PapelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entity.Usuario", "Usuario")
-                        .WithMany("PapelUsuario")
+                    b.HasOne("Domain.Entity.Usuario", null)
+                        .WithMany()
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Papel");
-
-                    b.Navigation("Usuario");
-                });
-
-            modelBuilder.Entity("Domain.Entity.Papel", b =>
-                {
-                    b.Navigation("PapelUsuario");
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Domain.Entity.Usuario", b =>
                 {
                     b.Navigation("Empresas");
-
-                    b.Navigation("PapelUsuario");
                 });
 #pragma warning restore 612, 618
         }

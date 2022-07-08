@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MovcontabilClone.Context;
 
 namespace Repositorio.Migrations
 {
     [DbContext(typeof(MovContext))]
-    partial class MovContextModelSnapshot : ModelSnapshot
+    [Migration("20220707224026_m")]
+    partial class m
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -491,9 +493,6 @@ namespace Repositorio.Migrations
                     b.Property<string>("Nome")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("PapelId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Senha")
                         .HasColumnType("nvarchar(max)");
 
@@ -502,8 +501,6 @@ namespace Repositorio.Migrations
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasFilter("[Email] IS NOT NULL");
-
-                    b.HasIndex("PapelId");
 
                     b.ToTable("Usuarios");
                 });
@@ -549,13 +546,6 @@ namespace Repositorio.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("Domain.Entity.Usuario", b =>
-                {
-                    b.HasOne("Domain.Entity.Papel", null)
-                        .WithMany("Usuario")
-                        .HasForeignKey("PapelId");
-                });
-
             modelBuilder.Entity("Domain.Entity.UsuarioPapel", b =>
                 {
                     b.HasOne("Domain.Entity.Papel", "Papel")
@@ -578,8 +568,6 @@ namespace Repositorio.Migrations
             modelBuilder.Entity("Domain.Entity.Papel", b =>
                 {
                     b.Navigation("PapelUsuario");
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Domain.Entity.Usuario", b =>

@@ -9,8 +9,8 @@ namespace Domain.Entity
      public class UsuarioPapel
     {
         public Usuario Usuario { get; set; }
-        public int IdUsuario { get; set; }
+        public int UsuarioId { get; set; }
         public Papel Papel { get; set; }
-        public int IdPapel { get; set; }
+        public int PapelId { get; set; }
     }
 }

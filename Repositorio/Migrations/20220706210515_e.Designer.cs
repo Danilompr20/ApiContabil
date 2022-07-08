@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MovcontabilClone.Context;
 
 namespace Repositorio.Migrations
 {
     [DbContext(typeof(MovContext))]
-    partial class MovContextModelSnapshot : ModelSnapshot
+    [Migration("20220706210515_e")]
+    partial class e
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -283,7 +285,7 @@ namespace Repositorio.Migrations
                     b.Property<int?>("CnaeId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CnaePreponderanteId")
+                    b.Property<int>("CnaePreponderanteId")
                         .HasColumnType("int");
 
                     b.Property<string>("Cnpj")
@@ -331,7 +333,7 @@ namespace Repositorio.Migrations
                     b.Property<string>("Telefone")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("UsuarioId")
+                    b.Property<int>("UsuarioId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -491,9 +493,6 @@ namespace Repositorio.Migrations
                     b.Property<string>("Nome")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("PapelId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Senha")
                         .HasColumnType("nvarchar(max)");
 
@@ -503,22 +502,35 @@ namespace Repositorio.Migrations
                         .IsUnique()
                         .HasFilter("[Email] IS NOT NULL");
 
-                    b.HasIndex("PapelId");
-
                     b.ToTable("Usuarios");
                 });
 
             modelBuilder.Entity("Domain.Entity.UsuarioPapel", b =>
                 {
-                    b.Property<int>("UsuarioId")
+                    b.Property<int>("IdUsuario")
                         .HasColumnType("int");
 
+                    b.Property<int>("IdPapel")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdUsuario", "IdPapel");
+
+                    b.HasIndex("IdPapel");
+
+                    b.ToTable("UsuariosPapeis");
+                });
+
+            modelBuilder.Entity("PapelUsuario", b =>
+                {
                     b.Property<int>("PapelId")
                         .HasColumnType("int");
 
-                    b.HasKey("UsuarioId", "PapelId");
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
 
-                    b.HasIndex("PapelId");
+                    b.HasKey("PapelId", "UsuarioId");
+
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("PapelUsuario");
                 });
@@ -542,31 +554,26 @@ namespace Repositorio.Migrations
 
                     b.HasOne("Domain.Entity.Usuario", "Usuario")
                         .WithMany("Empresas")
-                        .HasForeignKey("UsuarioId");
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Cnae");
 
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("Domain.Entity.Usuario", b =>
-                {
-                    b.HasOne("Domain.Entity.Papel", null)
-                        .WithMany("Usuario")
-                        .HasForeignKey("PapelId");
-                });
-
             modelBuilder.Entity("Domain.Entity.UsuarioPapel", b =>
                 {
                     b.HasOne("Domain.Entity.Papel", "Papel")
-                        .WithMany("PapelUsuario")
-                        .HasForeignKey("PapelId")
+                        .WithMany("UsuariosPapeis")
+                        .HasForeignKey("IdPapel")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Domain.Entity.Usuario", "Usuario")
-                        .WithMany("PapelUsuario")
-                        .HasForeignKey("UsuarioId")
+                        .WithMany("UsuariosPapeis")
+                        .HasForeignKey("IdUsuario")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -575,18 +582,31 @@ namespace Repositorio.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("PapelUsuario", b =>
+                {
+                    b.HasOne("Domain.Entity.Papel", null)
+                        .WithMany()
+                        .HasForeignKey("PapelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entity.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Entity.Papel", b =>
                 {
-                    b.Navigation("PapelUsuario");
-
-                    b.Navigation("Usuario");
+                    b.Navigation("UsuariosPapeis");
                 });
 
             modelBuilder.Entity("Domain.Entity.Usuario", b =>
                 {
                     b.Navigation("Empresas");
 
-                    b.Navigation("PapelUsuario");
+                    b.Navigation("UsuariosPapeis");
                 });
 #pragma warning restore 612, 618
         }
