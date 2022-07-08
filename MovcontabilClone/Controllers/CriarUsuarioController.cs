@@ -65,13 +65,15 @@ namespace MovcontabilClone.Controllers
             {
                 
                 HashSenha(usuario);
-                _context.Add(usuario);
+                
+                usuario.Empresas = null;
+                _context.Usuarios.Add(usuario);
                 _context.SaveChanges();
                 if (usuarioModel.Papel.Count > 0)
                     await SalvarPapelUsuario(usuario, _mapper.Map<List<Papel>>(papel));
 
-                if (usuario.Empresas is not null)
-                    await SalvarEmpresaUsuario(usuario, usuario.Empresas);
+                if (usuarioModel.Empresas is not null)
+                    await SalvarEmpresaUsuario(usuario, usuarioModel.Empresas);
                 var usuarioView = _mapper.Map<UsuarioViewModel>(usuario);
                 return Ok(GeraToken(usuario));
 
@@ -130,7 +132,7 @@ namespace MovcontabilClone.Controllers
                     _context.SaveChanges();
 
                     if (usuarioModel.Empresas is not null)
-                        await SalvarEmpresaUsuario(usuario, usuario.Empresas);
+                        await SalvarEmpresaUsuario(usuario, usuarioModel.Empresas);
 
                     return Ok();
                 }
@@ -355,28 +357,28 @@ namespace MovcontabilClone.Controllers
         }
 
         [NonAction]
-        private async Task SalvarEmpresaUsuario(Usuario usuario, List<EmpresaEstabelecimento> empresas)
+        private async Task SalvarEmpresaUsuario(Usuario usuario, List<EmpresaEstabelecimentoViewModel> empresas)
         {
             var usuarioSalvo = await GetUserByEmail(usuario);
-            var empresassalvas = _context.EmpresaEstabelecimentos.Where(x => empresas.Select(e => e.Id).Contains(x.Id)).AsNoTracking().ToList();
-            // var empresasJaCadastradaParaUsuario = _context.EmpresaEstabelecimentos.Where(x => x.UsuarioId == usuario.Id).AsNoTracking().ToList();
-            var empresasASeremRemovidas = _context.EmpresaEstabelecimentos.Where(x => !empresas.Select(e => e.Id).Contains(x.Id)).AsNoTracking().ToList();
+            var empresassalvasParausuario = _context.EmpresaEstabelecimentos.Where(x=> x.UsuarioId == usuario.Id).AsNoTracking().ToList();
+            var empresasASeremCadastradas = empresas.Where(x => !empresassalvasParausuario.Select(e => e.Id).Contains(x.Id)).ToList();
+            var empresasASeremRemovidas = empresassalvasParausuario.Where(x => !empresas.Select(e => e.Id).Contains(x.Id)).ToList();
 
             if (empresasASeremRemovidas.Count > 0)
             {
                 empresasASeremRemovidas.ForEach(x =>
                 {
-                    x.UsuarioId = 0;
+                    x.UsuarioId = null;
                     _context.EmpresaEstabelecimentos.Update(x);
                 });
             }
 
-            if (empresassalvas.Count > 0)
+            if (empresasASeremCadastradas.Count > 0)
             {
-                empresassalvas.ForEach(x =>
+                empresasASeremCadastradas.ForEach(x =>
                 {
                     x.UsuarioId = usuario.Id;
-                    _context.EmpresaEstabelecimentos.Update(x);
+                    _context.EmpresaEstabelecimentos.Update(_mapper.Map<EmpresaEstabelecimento>(x));
                 });
             }
             _context.SaveChanges();
