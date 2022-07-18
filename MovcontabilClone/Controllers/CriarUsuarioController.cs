@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MovcontabilClone.Context;
+using MovcontabilClone.Services;
 using ServiceStack.Redis;
 using System;
 using System.Collections.Generic;
@@ -27,11 +28,13 @@ namespace MovcontabilClone.Controllers
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private string host = "localhost:6379";
-        public CriarUsuarioController(MovContext context, IMapper mapper, IConfiguration configuration)
+        private readonly IEmailService  _emailService;
+        public CriarUsuarioController(MovContext context, IMapper mapper, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _mapper = mapper;
             _configuration = configuration;
+            _emailService = emailService;
         }
         [HttpGet]
         public ActionResult<IEnumerable<UsuarioViewModel>> Get()
@@ -161,9 +164,10 @@ namespace MovcontabilClone.Controllers
                     {
                         if (item.UsuarioId == usuario.Id)
                             _context.PapelUsuario.Remove(item);
-                        //buscar empresa e desassociar o usuario dela
+                        
                     }
                     _context.Usuarios.Remove(usuario);
+                    DeletaEmpresa(id);
                     _context.SaveChanges();
                     return Ok();
                 }
@@ -183,7 +187,13 @@ namespace MovcontabilClone.Controllers
                 return Ok(GeraToken(usuario));
         }
 
+        [HttpGet("Teste")]
+        public async Task<ActionResult> EmailTeste()
+        {
+          await  _emailService.SendEmmailAsync("Danilompr@hotmail.com", "teste","teste","Teste");
+            return Ok();
 
+        }
         [HttpPost("Refresh")]
         public async Task<ActionResult> Refresh([FromBody] Refresh refresh)
         {
@@ -199,7 +209,16 @@ namespace MovcontabilClone.Controllers
             SaveRefreshToken(email, novotoken.Token);
             return Ok(novotoken);
         }
-
+        [NonAction]
+        private void DeletaEmpresa(int usuarioId)
+        {
+           var empresas= _context.EmpresaEstabelecimentos.Where(x => x.UsuarioId == usuarioId).AsNoTracking().ToList();
+            empresas.ForEach(x =>
+            {
+                x.UsuarioId = null;
+                _context.EmpresaEstabelecimentos.Update(x);
+            });
+        }
 
         [NonAction]
         private void HashSenha(Usuario usuario)

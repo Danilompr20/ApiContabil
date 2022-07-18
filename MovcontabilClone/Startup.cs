@@ -21,6 +21,8 @@ using Aplication.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Aplication.Model;
+using MovcontabilClone.Services;
 
 namespace MovcontabilClone
 {
@@ -39,9 +41,12 @@ namespace MovcontabilClone
           
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddScoped<IEmpresaRepository, EmpresaRepository>();
-            services.AddScoped<ICnaeRepository, CnaeRepository>();  
+            services.AddScoped<ICnaeRepository, CnaeRepository>();
+
+            services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
             //services.AddScoped<ICnaeApplication, CnaeApplication>();
             services.AddScoped<IEmpresaApplication, EmpresaApplication>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddControllers().AddJsonOptions(options =>
                options.JsonSerializerOptions.PropertyNamingPolicy = null).AddNewtonsoftJson(
                 x=> x.SerializerSettings.ReferenceLoopHandling =Newtonsoft.Json.ReferenceLoopHandling.Ignore) ;
